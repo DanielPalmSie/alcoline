@@ -1,25 +1,3 @@
-CREATE TABLE `products` (
-                            `id` INT AUTO_INCREMENT PRIMARY KEY,
-                            `name` VARCHAR(255) NOT NULL,
-                            `price` DECIMAL(10, 2) NOT NULL,
-                            `stock` INT NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-
-CREATE TABLE `coins` (
-                         `id` INT AUTO_INCREMENT PRIMARY KEY,
-                         `denomination` DECIMAL(10, 2) NOT NULL,
-                         `quantity` INT NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-
-CREATE TABLE IF NOT EXISTS products (
-                                        id INT AUTO_INCREMENT PRIMARY KEY,
-                                        name VARCHAR(255) NOT NULL,
-    price DECIMAL(10, 2) NOT NULL,
-    stock INT NOT NULL
-    );
-
 CREATE TABLE IF NOT EXISTS products (
                                         id INT AUTO_INCREMENT PRIMARY KEY,
                                         name VARCHAR(255) NOT NULL,

@@ -6,7 +6,7 @@ use Alcoline\Daniel\Domain\Entity\Product;
 use Alcoline\Daniel\Domain\Repository\ProductRepositoryInterface;
 use Alcoline\Daniel\Domain\ValueObject\Name;
 use Alcoline\Daniel\Domain\ValueObject\Stock;
-use Alcoline\Daniel\Infrastructure\Storage\DatabaseConnection;
+use Alcoline\Daniel\Infrastructure\Storage\DatabaseConnectionInterface;
 use Money\Currency;
 use Money\Money;
 
@@ -14,9 +14,11 @@ class ProductRepository implements ProductRepositoryInterface
 {
     private \PDO $connection;
 
-    public function __construct()
+    private const int PRICE_MULTIPLIER = 100;
+
+    public function __construct(DatabaseConnectionInterface $dbConnection)
     {
-        $this->connection = DatabaseConnection::getInstance()->getConnection();
+        $this->connection = $dbConnection->getConnection();
     }
 
     public function findById(int $id): ?Product
@@ -26,7 +28,7 @@ class ProductRepository implements ProductRepositoryInterface
         $productData = $statement->fetch();
 
         if ($productData) {
-            $priceInCents = (int)($productData['price'] * 100);
+            $priceInCents = (int)($productData['price'] * self::PRICE_MULTIPLIER);
             return new Product(
                 new Name($productData['name']),
                 new Money($priceInCents, new Currency('USD')),
@@ -46,7 +48,7 @@ class ProductRepository implements ProductRepositoryInterface
         if ($productData) {
             $product = new Product(
                 new Name($productData['name']),
-                new Money((int)($productData['price'] * 100), new Currency('USD')),
+                new Money((int)($productData['price'] * self::PRICE_MULTIPLIER), new Currency('USD')),
                 new Stock((int)$productData['stock'])
             );
             $product->setId($productData['id']);
@@ -66,7 +68,7 @@ class ProductRepository implements ProductRepositoryInterface
 
             $product = new Product(
                 new Name($productData['name']),
-                new Money((int)($productData['price'] * 100), new Currency('USD')),
+                new Money((int)($productData['price'] * self::PRICE_MULTIPLIER), new Currency('USD')),
                 new Stock((int)$productData['stock'])
             );
 
@@ -79,28 +81,25 @@ class ProductRepository implements ProductRepositoryInterface
 
     public function save(Product $product): void
     {
-
-        if ($product->getId() !== null && $this->findById($product->getId()) !== null) {
-
-            $statement = $this->connection->prepare("UPDATE products SET name = :name, price = :price, stock = :stock WHERE id = :id");
-        } else {
-
-            $statement = $this->connection->prepare("INSERT INTO products (name, price, stock) VALUES (:name, :price, :stock)");
-        }
+        $isNewProduct = $product->getId() === null;
+        $sql = $isNewProduct ?
+            "INSERT INTO products (name, price, stock) VALUES (:name, :price, :stock)" :
+            "UPDATE products SET name = :name, price = :price, stock = :stock WHERE id = :id";
 
         $data = [
-            ':name' => (string)$product->getName(),
+            ':name' => $product->getName(),
             ':price' => $product->getPrice()->getAmount(),
             ':stock' => $product->getStock()->getValue(),
         ];
 
-        if ($product->getId() !== null) {
+        if (!$isNewProduct) {
             $data[':id'] = $product->getId();
         }
 
+        $statement = $this->connection->prepare($sql);
         $statement->execute($data);
 
-        if ($product->getId() === null) {
+        if ($isNewProduct) {
             $product->setId((int)$this->connection->lastInsertId());
         }
     }

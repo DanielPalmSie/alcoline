@@ -4,8 +4,9 @@ namespace Alcoline\Daniel\Application\Service;
 
 use Alcoline\Daniel\Application\DTO\ProductDTO;
 use Alcoline\Daniel\Domain\Entity\Product;
+use Alcoline\Daniel\Domain\Enums\CoinDenomination;
 use Alcoline\Daniel\Domain\Repository\ProductRepositoryInterface;
-use Alcoline\Daniel\Domain\Services\MoneyService;
+use Alcoline\Daniel\Domain\Services\CurrencyFormatterInterface;
 use Alcoline\Daniel\Domain\ValueObject\Name;
 use Alcoline\Daniel\Domain\ValueObject\Stock;
 use Money\Currency;
@@ -14,13 +15,11 @@ use Money\MoneyParser;
 
 class VendingMachineService
 {
-    private const array VALID_COINS = [0.01, 0.05, 0.10, 0.25, 0.50, 1.00];
-
     public function __construct(
         private readonly ProductRepositoryInterface $productRepository,
-        private readonly MoneyParser $moneyParser,
-        private readonly Currency $currency,
-        private readonly MoneyService $moneyService,
+        private readonly MoneyParser                $moneyParser,
+        private readonly Currency                   $currency,
+        private readonly CurrencyFormatterInterface $currencyFormatter,
     ) {
     }
 
@@ -33,7 +32,7 @@ class VendingMachineService
             $productsDto[] = new ProductDTO(
                 $product->getId(),
                 (string)$product->getName(),
-                $this->moneyService->formatMoney($product->getPrice()),
+                $this->currencyFormatter->formatMoney($product->getPrice()),
                 $product->getStock()->getValue()
             );
         }
@@ -49,19 +48,21 @@ class VendingMachineService
             return "Product not found.";
         }
 
-        return sprintf("You selected %s. Price: %s\n", $product->getName(), $this->moneyService->formatMoney($product->getPrice()));
+        return sprintf("You selected %s. Price: %s\n", $product->getName(), $this->currencyFormatter->formatMoney($product->getPrice()));
     }
 
     private function validateCoins(array $coins): bool
     {
+        $validCoins = array_map(fn($case) => $case->value, CoinDenomination::cases());
+
         foreach ($coins as $coin) {
-            if (!in_array((float)$coin, self::VALID_COINS, true)) {
+            if (!in_array((string)$coin, $validCoins, true)) {
                 return false;
             }
         }
+
         return true;
     }
-
 
     public function purchaseProduct(string $productName, array $coins): string
     {
@@ -91,6 +92,6 @@ class VendingMachineService
         $product->setStock($newStock);
         $this->productRepository->save($product);
 
-        return sprintf("Product dispensed: %s. Change: %s\n", $product->getName(), $this->moneyService->formatMoney($change));
+        return sprintf("Product dispensed: %s. Change: %s\n", $product->getName(), $this->currencyFormatter->formatMoney($change));
     }
 }

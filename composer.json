@@ -14,6 +14,7 @@
     "require": {
         "moneyphp/money": "^3.3",
         "ext-pdo": "*",
-        "ext-intl": "*"
+        "ext-intl": "*",
+        "vlucas/phpdotenv": "^5.6"
     }
 }

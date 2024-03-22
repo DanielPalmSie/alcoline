@@ -2,22 +2,25 @@
 
 namespace Alcoline\Daniel\Infrastructure\Storage;
 
+use Dotenv\Dotenv;
 use PDO;
 use PDOException;
 
-class DatabaseConnection
+class MYSQLConnection implements DatabaseConnectionInterface
 {
-    private static ?DatabaseConnection $instance = null;
     private PDO $connection;
 
-    private function __construct()
+    public function __construct()
     {
-        $host = 'host.docker.internal';
-        $db   = 'mydatabase';
-        $user = 'myuser';
-        $pass = 'mypassword';
-        $charset = 'utf8mb4';
-        $port = 3306;
+        $dotenv = Dotenv::createImmutable(__DIR__ . '/../../../');
+        $dotenv->load();
+
+        $host = $_ENV['DB_HOST'];
+        $db   = $_ENV['MYSQL_DATABASE'];
+        $user = $_ENV['MYSQL_USER'];
+        $pass = $_ENV['MYSQL_PASSWORD'];
+        $charset = $_ENV['DB_CHARSET'];
+        $port = $_ENV['DB_PORT'];
 
         $dsn = "mysql:host=$host;port=$port;dbname=$db;charset=$charset";
         $options = [
@@ -31,15 +34,6 @@ class DatabaseConnection
         } catch (PDOException $e) {
             throw new PDOException($e->getMessage(), (int)$e->getCode());
         }
-    }
-
-    public static function getInstance(): DatabaseConnection
-    {
-        if (self::$instance === null) {
-            self::$instance = new DatabaseConnection();
-        }
-
-        return self::$instance;
     }
 
     public function getConnection(): PDO
