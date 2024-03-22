@@ -16,7 +16,6 @@ class ProductRepository implements ProductRepositoryInterface
 
     public function __construct()
     {
-        // Получаем PDO объект из DatabaseConnection
         $this->connection = DatabaseConnection::getInstance()->getConnection();
     }
 
@@ -30,7 +29,6 @@ class ProductRepository implements ProductRepositoryInterface
             $priceInCents = (int)($productData['price'] * 100);
             return new Product(
                 new Name($productData['name']),
-                // предполагается что Money объект может быть создан так:
                 new Money($priceInCents, new Currency('USD')),
                 new Stock((int)$productData['stock'])
             );
