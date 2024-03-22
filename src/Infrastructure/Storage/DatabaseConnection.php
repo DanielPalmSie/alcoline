@@ -7,12 +7,12 @@ use PDOException;
 
 class DatabaseConnection
 {
-    private static $instance = null;
+    private static ?DatabaseConnection $instance = null;
     private PDO $connection;
 
     private function __construct()
     {
-        $host = 'host.docker.internal'; // or your database server host
+        $host = 'host.docker.internal';
         $db   = 'mydatabase';
         $user = 'myuser';
         $pass = 'mypassword';

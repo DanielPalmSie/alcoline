@@ -6,18 +6,17 @@ use Alcoline\Daniel\Application\Service\VendingMachineService;
 
 class ConsoleController
 {
-    private VendingMachineService $vendingMachineService;
-
-    public function __construct(VendingMachineService $vendingMachineService)
-    {
-        $this->vendingMachineService = $vendingMachineService;
-    }
+    public function __construct(private readonly VendingMachineService $vendingMachineService)
+    {}
 
     public function run(string $command, array $args): void
     {
         switch ($command) {
             case 'list':
-                echo $this->vendingMachineService->displayProducts();
+                $productsDto = $this->vendingMachineService->displayProducts();
+                foreach ($productsDto as $productDto) {
+                    echo sprintf("%s - %s\n", $productDto->name, $productDto->price);
+                }
                 break;
 
             case 'select':

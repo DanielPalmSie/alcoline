@@ -2,6 +2,7 @@
 
 namespace Alcoline\Daniel\Application\Service;
 
+use Alcoline\Daniel\Application\DTO\ProductDTO;
 use Alcoline\Daniel\Domain\Entity\Product;
 use Alcoline\Daniel\Domain\Repository\ProductRepositoryInterface;
 use Alcoline\Daniel\Domain\Services\MoneyService;
@@ -13,47 +14,32 @@ use Money\MoneyParser;
 
 class VendingMachineService
 {
-    private ProductRepositoryInterface $productRepository;
-    private MoneyParser $moneyParser;
-    private Currency $currency;
-    private MoneyService $moneyService;
-
-    private const VALID_COINS = [0.01, 0.05, 0.10, 0.25, 0.50, 1.00];
+    private const array VALID_COINS = [0.01, 0.05, 0.10, 0.25, 0.50, 1.00];
 
     public function __construct(
-        ProductRepositoryInterface $productRepository,
-        MoneyParser $moneyParser,
-        Currency $currency,
-        MoneyService $moneyService,
+        private readonly ProductRepositoryInterface $productRepository,
+        private readonly MoneyParser $moneyParser,
+        private readonly Currency $currency,
+        private readonly MoneyService $moneyService,
     ) {
-        $this->productRepository = $productRepository;
-        $this->moneyParser = $moneyParser;
-        $this->currency = $currency;
-        $this->moneyService = $moneyService;
     }
 
-    /**
-     * Displays all products.
-     *
-     * @return string
-     */
-    public function displayProducts(): string
+    public function displayProducts(): array
     {
         $products = $this->productRepository->findAll();
-        $display = "Products available:\n";
+        $productsDto = [];
         foreach ($products as $product) {
             /** @var Product $product */
-            $display .= sprintf("%s - %s\n", $product->getName(), $this->moneyService->formatMoney($product->getPrice()));
+            $productsDto[] = new ProductDTO(
+                $product->getId(),
+                (string)$product->getName(),
+                $this->moneyService->formatMoney($product->getPrice()),
+                $product->getStock()->getValue()
+            );
         }
-        return $display;
+        return $productsDto;
     }
 
-    /**
-     * Selects a product and shows its price.
-     *
-     * @param string $productName
-     * @return string
-     */
     public function selectProduct(string $productName): string
     {
         $name = new Name($productName);
@@ -70,19 +56,13 @@ class VendingMachineService
     {
         foreach ($coins as $coin) {
             if (!in_array((float)$coin, self::VALID_COINS, true)) {
-                return false; // Найден недопустимый номинал
+                return false;
             }
         }
-        return true; // Все монеты допустимы
+        return true;
     }
 
-    /**
-     * Accepts coins and returns the product and change if applicable.
-     *
-     * @param string $productName
-     * @param array $coins Array of strings representing the coins inserted.
-     * @return string
-     */
+
     public function purchaseProduct(string $productName, array $coins): string
     {
         if (!$this->validateCoins($coins)) {
@@ -107,7 +87,6 @@ class VendingMachineService
 
         $change = $totalInserted->subtract($product->getPrice());
 
-        // Update product stock
         $newStock = new Stock($product->getStock()->getValue() - 1);
         $product->setStock($newStock);
         $this->productRepository->save($product);

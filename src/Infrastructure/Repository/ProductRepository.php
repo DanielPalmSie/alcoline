@@ -63,12 +63,15 @@ class ProductRepository implements ProductRepositoryInterface
 
         $products = [];
         foreach ($productsData as $productData) {
-            $priceInCents = (int)($productData['price'] * 100);
-            $products[] = new Product(
+
+            $product = new Product(
                 new Name($productData['name']),
-                new Money($priceInCents, new Currency('USD')),
+                new Money((int)($productData['price'] * 100), new Currency('USD')),
                 new Stock((int)$productData['stock'])
             );
+
+            $product->setId($productData['id']);
+            $products[] = $product;
         }
 
         return $products;
@@ -76,31 +79,27 @@ class ProductRepository implements ProductRepositoryInterface
 
     public function save(Product $product): void
     {
-        // Проверяем, существует ли продукт
+
         if ($product->getId() !== null && $this->findById($product->getId()) !== null) {
-            // Обновляем существующий продукт
+
             $statement = $this->connection->prepare("UPDATE products SET name = :name, price = :price, stock = :stock WHERE id = :id");
         } else {
-            // Вставляем новый продукт
+
             $statement = $this->connection->prepare("INSERT INTO products (name, price, stock) VALUES (:name, :price, :stock)");
         }
 
-        // Подготавливаем данные для запроса
         $data = [
             ':name' => (string)$product->getName(),
-            ':price' => $product->getPrice()->getAmount(), // Предполагаем, что цена уже в минимальных единицах (центах)
+            ':price' => $product->getPrice()->getAmount(),
             ':stock' => $product->getStock()->getValue(),
         ];
 
-        // Если обновляем продукт, добавляем его ID в данные запроса
         if ($product->getId() !== null) {
             $data[':id'] = $product->getId();
         }
 
-        // Выполняем запрос
         $statement->execute($data);
 
-        // Если это был новый продукт, устанавливаем ему ID
         if ($product->getId() === null) {
             $product->setId((int)$this->connection->lastInsertId());
         }
