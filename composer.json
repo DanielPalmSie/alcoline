@@ -1,0 +1,19 @@
+{
+    "name": "alcoline/daniel",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "Alcoline\\Daniel\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Daniel"
+        }
+    ],
+    "require": {
+        "moneyphp/money": "^3.3",
+        "ext-pdo": "*",
+        "ext-intl": "*"
+    }
+}
