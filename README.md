@@ -14,7 +14,7 @@ To start the project, you need to execute the `start.sh` script. This will launc
 Once the project is up and running, you can test it by executing commands from within the PHP container. First, you need to enter the PHP container:
 
 ```bash
-docker exec -it myapp_php sh
+docker exec -it myapp_php bash
 ```
 
 Then, navigate to the `public` directory relative to the root directory you find yourself in after entering the container:
